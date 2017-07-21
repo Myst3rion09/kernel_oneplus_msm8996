@@ -640,6 +640,9 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning,unused-const-variable,)
 # Disable misleading-indentation warnings
 KBUILD_CFLAGS   += $(call cc-disable-warning,misleading-indentation,)
 
+# Disable switch-unreachable warnings
+KBUILD_CFLAGS   += $(call cc-disable-warning,switch-unreachable,)
+
 # Needed to unbreak GCC 7.x and above
 KBUILD_CFLAGS   += $(call cc-option,-fno-store-merging,)
 
