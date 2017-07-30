@@ -390,14 +390,52 @@ pktlog_enable(struct ol_softc *scn, int32_t log_state)
 
 }
 
-int
-pktlog_setsize(struct ol_softc *scn, int32_t size)
+int pktlog_enable(struct ol_softc *scn, int32_t log_state)
+{
+	struct ol_pktlog_dev_t *pl_dev;
+	struct ath_pktlog_info *pl_info;
+	int error;
+
+	if (!scn) {
+		printk("%s: Invalid scn context\n", __func__);
+		ASSERT(0);
+		return A_ERROR;
+	}
+
+	pl_dev = scn->pdev_txrx_handle->pl_dev;
+	if (!pl_dev) {
+		printk("%s: Invalid pktlog context\n", __func__);
+		ASSERT(0);
+		return A_ERROR;
+	}
+
+	pl_info = pl_dev->pl_info;
+
+	if (!pl_info)
+		return 0;
+
+	mutex_lock(&pl_info->pktlog_mutex);
+	error = __pktlog_enable(scn, log_state);
+	mutex_unlock(&pl_info->pktlog_mutex);
+	return error;
+}
+
+#define ONE_MEGABYTE (1024 * 1024)
+#define MAX_ALLOWED_PKTLOG_SIZE (16 * ONE_MEGABYTE)
+
+static int
+__pktlog_setsize(struct ol_softc *scn, int32_t size)
 {
 	struct ol_pktlog_dev_t *pl_dev = scn->pdev_txrx_handle->pl_dev;
 	struct ath_pktlog_info *pl_info = pl_dev->pl_info;
 
-	if (size < 0)
+	if (size < ONE_MEGABYTE || size > MAX_ALLOWED_PKTLOG_SIZE) {
+		printk("%s: Cannot Set Pktlog Buffer size of %d bytes."
+			"Min required is %d MB and Max allowed is %d MB.\n",
+			__func__, size, (ONE_MEGABYTE/ONE_MEGABYTE),
+			(MAX_ALLOWED_PKTLOG_SIZE/ONE_MEGABYTE));
 		return -EINVAL;
+	}
 
 	if (size == pl_info->buf_size)
 		return 0;
